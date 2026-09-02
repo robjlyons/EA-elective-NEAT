@@ -287,13 +287,27 @@ def weightedRandom(weights):
   Returns:
     i         - (int)      - chosen index
   """
+  weights = np.asarray(weights, dtype=float).flatten()
+  if weights.size == 0:
+    raise ValueError("weights must be nonempty")
+  if not np.all(np.isfinite(weights)):
+    raise ValueError("weights must contain only finite values")
+
+  # Preserve support for raw scores by shifting negative values into the
+  # nonnegative range. Long doubles avoid overflow for extreme finite scores.
+  weights = weights.astype(np.longdouble)
   minVal = np.min(weights)
-  weights = weights - minVal # handle negative vals
-  cumVal = np.cumsum(weights)
-  pick = np.random.uniform(0, cumVal[-1])
-  for i in range(len(weights)):
-    if cumVal[i] >= pick:
-      return i
+  if minVal < 0:
+    weights = weights - minVal
+
+  maxVal = np.max(weights)
+  if maxVal == 0:
+    probabilities = np.full(weights.size, 1.0 / weights.size)
+  else:
+    probabilities = np.asarray(weights / maxVal, dtype=float)
+    probabilities /= np.sum(probabilities)
+
+  return int(np.random.choice(weights.size, p=probabilities))
         
 
 # -- File I/O ------------------------------------------------------------ -- #
@@ -313,4 +327,3 @@ def importNet(fileName):
   wKey = np.where(wVec!=0)[0] 
 
   return wVec, aVec, wKey
-
