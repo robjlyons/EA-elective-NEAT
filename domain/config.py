@@ -172,15 +172,15 @@ breakout = Game(env_name="minatar:breakout",
                 output_size=6,
                 time_factor=0,
                 layers=[5, 5],
-                i_act=np.full(5, 1),
+                i_act=np.full(100, 1),
                 h_act=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                o_act=np.full(1, 1),
+                o_act=np.full(6, 1),
                 weightCap=2.0,
                 noise_bias=0.0,
                 output_noise=[False, False, False],
                 max_episode_length=1000,
-                in_out_labels=['x', 'x_dot', 'cos(theta)', 'sin(theta)', 'theta_dot',
-                               'force']
+                in_out_labels=[f'cell_{index}' for index in range(100)] +
+                              ['noop', 'fire', 'up', 'down', 'left', 'right']
                 )
 games["minatar:breakout"] = breakout
 # ======================================================================================================================
@@ -193,15 +193,15 @@ freeway = Game(env_name="minatar:freeway",
                 output_size=6,
                 time_factor=0,
                 layers=[5, 5],
-                i_act=np.full(5, 1),
+                i_act=np.full(100, 1),
                 h_act=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                o_act=np.full(1, 1),
+                o_act=np.full(6, 1),
                 weightCap=2.0,
                 noise_bias=0.0,
                 output_noise=[False, False, False],
                 max_episode_length=1000,
-                in_out_labels=['x', 'x_dot', 'cos(theta)', 'sin(theta)', 'theta_dot',
-                               'force']
+                in_out_labels=[f'cell_{index}' for index in range(100)] +
+                              ['noop', 'fire', 'up', 'down', 'left', 'right']
                 )
 games["minatar:freeway"] = freeway
 # ======================================================================================================================
