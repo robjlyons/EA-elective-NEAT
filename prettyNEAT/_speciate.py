@@ -24,7 +24,7 @@ class Species():
     self.bestInd = seed
     self.bestFit = seed.fitness
     self.lastImp = 0
-    self.nOffspring = []
+    self.nOffspring = 0
 
 def speciate(self):  
   """Divides population into species and assigns each a number of offspring/
@@ -129,7 +129,7 @@ def assignOffspring(self, species, pop, p):
 
   nSpecies = len(species)
   if nSpecies == 1:
-    species[0].offspring = p['popSize']
+    species[0].nOffspring = p['popSize']
   else:
     # -- Fitness Sharing
     # Rank all individuals

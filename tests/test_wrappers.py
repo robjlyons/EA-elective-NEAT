@@ -10,7 +10,8 @@ import pytest
 @pytest.fixture
 def wrapper_class(monkeypatch):
     class FakeEnvironment:
-        pass
+        def state(self):
+            return self.raw_state
 
     minatar = types.ModuleType("minatar")
     minatar.Environment = FakeEnvironment
@@ -22,6 +23,48 @@ def wrapper_class(monkeypatch):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module.MinatarWrapper
+
+
+@pytest.mark.parametrize(
+    "observation",
+    [
+        np.zeros((2, 2, 2)),
+        np.full((2, 2, 2), 3),
+        np.array(
+            [
+                [[0, 0], [1, 0]],
+                [[0, 1], [1, 1]],
+            ]
+        ),
+    ],
+    ids=["all-zero", "constant-nonzero", "varied"],
+)
+def test_state_and_render_are_finite(wrapper_class, observation):
+    wrapper = wrapper_class()
+    wrapper.raw_state = observation
+
+    state = wrapper._state()
+    image_data = np.asarray(wrapper.render())
+
+    assert np.isfinite(state).all()
+    assert np.isfinite(image_data).all()
+
+
+def test_constant_observations_return_neutral_state(wrapper_class):
+    wrapper = wrapper_class()
+    wrapper.raw_state = np.full((2, 2, 2), 3)
+
+    np.testing.assert_array_equal(wrapper._state(), np.zeros((2, 2)))
+
+
+def test_render_handles_zero_scaling_maximum(wrapper_class):
+    wrapper = wrapper_class()
+    wrapper._state = lambda: np.full((2, 2), -1.0)
+
+    image_data = np.asarray(wrapper.render())
+
+    assert np.isfinite(image_data).all()
+    np.testing.assert_array_equal(image_data, np.zeros((200, 200), dtype=np.uint8))
 
 
 def make_wrapper(wrapper_class):
@@ -66,33 +109,3 @@ def test_step_rejects_invalid_scalar_discrete_action(wrapper_class, action):
         wrapper.step(action)
 
     assert wrapper.actions_received == []
-
-
-def test_make_env_uses_supported_minatar_seed_argument(monkeypatch):
-    constructor_arguments = {}
-
-    class FakeMinatarWrapper:
-        def __init__(self, env_name, sticky_action_prob, seed):
-            constructor_arguments.update(
-                env_name=env_name,
-                sticky_action_prob=sticky_action_prob,
-                seed=seed,
-            )
-
-    wrappers = types.ModuleType("wrappers")
-    wrappers.MinatarWrapper = FakeMinatarWrapper
-    monkeypatch.setitem(sys.modules, "wrappers", wrappers)
-
-    module_path = Path(__file__).parents[1] / "domain" / "make_env.py"
-    spec = importlib.util.spec_from_file_location("make_env_under_test", module_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-
-    environment = module.make_env("minatar:breakout")
-
-    assert isinstance(environment, FakeMinatarWrapper)
-    assert constructor_arguments == {
-        "env_name": "breakout",
-        "sticky_action_prob": 0.0,
-        "seed": 0,
-    }

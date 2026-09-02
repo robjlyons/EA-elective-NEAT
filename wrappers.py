@@ -65,7 +65,11 @@ class MinatarWrapper(Environment):
         if time:
             self.display_state(time=time)
         state = (self._state() + 1)/2
-        state = state / np.max(state) * 256
+        maximum = np.max(state)
+        if maximum == 0:
+            state = np.zeros_like(state, dtype=float)
+        else:
+            state = state / maximum * 256
         mag = 100
         state = np.kron(state, np.ones(shape=(mag, mag)))
         image = Image.fromarray(state)
@@ -83,7 +87,10 @@ class MinatarWrapper(Environment):
         state = np.sum([state[i] * (i + 1) for i in range(state.shape[0])], axis=0)
         # normalize the image
         m, M = np.min(state), np.max(state)
-        state = 2 * (state - m) / (M - m) - 1
+        if M == m:
+            state = np.zeros_like(state, dtype=float)
+        else:
+            state = 2 * (state - m) / (M - m) - 1
         return state
 
 
