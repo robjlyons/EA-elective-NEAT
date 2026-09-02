@@ -30,9 +30,23 @@ class MinatarWrapper(Environment):
             Return:
                 (tensor, float, bool, dict) new observation, reward, done signal and complementary informations.
         """
-        #action = minatar_action(actions)
-        action = np.random.randint(6)
-        reward, done = self.act(action)
+        supplied_action = np.asarray(actions)
+        if supplied_action.ndim == 0:
+            action = supplied_action.item()
+            if isinstance(action, (bool, np.bool_)) or not isinstance(
+                    action, (int, np.integer)):
+                raise ValueError("A discrete action must be an integer.")
+
+            action_count = self.num_actions()
+            if action < 0 or action >= action_count:
+                raise ValueError(
+                    f"Action {action} is outside the valid range "
+                    f"[0, {action_count})."
+                )
+        else:
+            action = minatar_action(supplied_action)
+
+        reward, done = self.act(int(action))
         state = self._state().flatten()
 
         return state, reward, done, {}
@@ -75,7 +89,7 @@ class MinatarWrapper(Environment):
 
 # == EA-elective-NEAT ==================================================================================================
 def minatar_action(actions):
-    actions = actions.flatten()
+    actions = np.asarray(actions).flatten()
     action = np.random.choice(np.arange(actions.size), p=actions)
     return action
 # ======================================================================================================================

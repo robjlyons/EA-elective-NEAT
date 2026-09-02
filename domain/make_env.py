@@ -53,7 +53,7 @@ def make_env(env_name, seed=-1, render_mode=False):
     # +== EA-elective-NEAT =============================================================================================
     elif env_name.startswith("minatar:"):
         env_name = env_name.split(':')[1]
-        env = MinatarWrapper(env_name, sticky_action_prob=.0, random_seed=0)
+        env = MinatarWrapper(env_name, sticky_action_prob=.0, seed=0)
     # =================================================================================================================+
 
     # -- Other  -------------------------------------------------------- -- #
