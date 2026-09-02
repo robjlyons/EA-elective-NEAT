@@ -20,6 +20,19 @@ class GymTask:
           paramOnly - (bool)  - only load parameters instead of launching task?
           nReps     - (nReps) - number of trials to get average fitness
         """
+        if len(game.i_act) != game.input_size:
+            raise ValueError(
+                f"Invalid activation configuration for {game.env_name}: "
+                f"input_size is {game.input_size}, but i_act has "
+                f"{len(game.i_act)} entries."
+            )
+        if len(game.o_act) != game.output_size:
+            raise ValueError(
+                f"Invalid activation configuration for {game.env_name}: "
+                f"output_size is {game.output_size}, but o_act has "
+                f"{len(game.o_act)} entries."
+            )
+
         # Network properties
         self.nInput = game.input_size
         self.nOutput = game.output_size
