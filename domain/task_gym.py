@@ -6,6 +6,10 @@ from .make_env import make_env
 from prettyNEAT import *
 
 
+class BudgetExhaustedError(RuntimeError):
+    """Raised when a fitness evaluation cannot start within the task budget."""
+
+
 class GymTask:
     """Problem domain to be solved by neural network. Uses OpenAI Gym patterns.
     """
@@ -78,17 +82,25 @@ class GymTask:
 
         Returns:
           fitness - (float)    - mean reward over all trials
+
+        Raises:
+          BudgetExhaustedError - if the evaluation budget is already exhausted
         """
         if nRep is False:
             nRep = self.nReps
         wVec[np.isnan(wVec)] = 0
-        reward = np.empty(nRep)
+        rewards = []
         for iRep in range(nRep):
-            reward[iRep] = self.testInd(wVec, aVec, view=view, seed=seed + iRep)
-            self.curr_eval += 1
             if self.curr_eval >= self.budget:
                 break
-        fitness = np.mean(reward)
+            rewards.append(self.testInd(wVec, aVec, view=view, seed=seed + iRep))
+            self.curr_eval += 1
+
+        if not rewards:
+            raise BudgetExhaustedError(
+                "Cannot evaluate individual: the evaluation budget is exhausted."
+            )
+        fitness = np.mean(rewards)
 
         # == EA-elective-NEAT ==========================================================================================
         if view:

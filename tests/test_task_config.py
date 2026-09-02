@@ -2,6 +2,7 @@ import sys
 import types
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
@@ -11,7 +12,7 @@ minatar.Environment = object
 sys.modules.setdefault("minatar", minatar)
 
 from domain.config import games
-from domain.task_gym import GymTask
+from domain.task_gym import BudgetExhaustedError, GymTask
 
 
 @pytest.mark.parametrize("game_name", ["minatar:breakout", "minatar:freeway"])
@@ -39,3 +40,34 @@ def test_gym_task_rejects_activation_count_mismatches(field, replacement, messag
 
     with pytest.raises(ValueError, match=message):
         GymTask(game, paramOnly=True)
+
+
+def make_fitness_task(budget, rewards):
+    task = GymTask.__new__(GymTask)
+    task.nReps = len(rewards)
+    task.curr_eval = 0
+    task.budget = budget
+    task.testInd = lambda *args, **kwargs: rewards.pop(0)
+    return task
+
+
+def test_get_fitness_raises_when_budget_is_exhausted():
+    rewards = [123.0]
+    task = make_fitness_task(budget=0, rewards=rewards)
+
+    with pytest.raises(BudgetExhaustedError, match="budget is exhausted"):
+        task.getFitness(np.array([0.0]), np.array([0]), nRep=1)
+
+    assert task.curr_eval == 0
+    assert rewards == [123.0]
+
+
+def test_get_fitness_averages_only_completed_evaluations():
+    rewards = [2.0, 4.0, 1000.0]
+    task = make_fitness_task(budget=2, rewards=rewards)
+
+    fitness = task.getFitness(np.array([0.0]), np.array([0]), nRep=3)
+
+    assert fitness == pytest.approx(3.0)
+    assert task.curr_eval == 2
+    assert rewards == [1000.0]
