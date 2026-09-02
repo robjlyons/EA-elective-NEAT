@@ -36,10 +36,16 @@ def make_env(env_name, seed=-1, render_mode=False):
         if env_name.endswith("digits"):
             from domain.classify_gym import digit_raw
             trainSet, target = digit_raw()
-
-        if env_name.endswith("mnist256"):
+        elif env_name.endswith("mnist256"):
             from domain.classify_gym import mnist_256
             trainSet, target = mnist_256()
+        elif env_name.endswith("mnist784"):
+            from domain.classify_gym import mnist_784
+            trainSet, target = mnist_784()
+        else:
+            raise ValueError(
+                "Unknown classification environment: {!r}".format(env_name)
+            )
 
         env = ClassifyEnv(trainSet, target)
 

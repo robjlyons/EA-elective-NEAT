@@ -62,6 +62,63 @@ def test_custom_environment_categories_seed_the_created_environment(
     assert env.seed_received == 7
 
 
+@pytest.mark.parametrize(
+    ("env_name", "loader_name"),
+    [
+        ("Classify_digits", "digit_raw"),
+        ("Classify_mnist256", "mnist_256"),
+        ("Classify_mnist784", "mnist_784"),
+    ],
+)
+def test_classification_environment_uses_matching_dataset_loader(
+        monkeypatch, make_env_module, env_name, loader_name):
+    loader_calls = []
+    datasets = {
+        name: (object(), object())
+        for name in ("digit_raw", "mnist_256", "mnist_784")
+    }
+
+    def loader(name):
+        def load_dataset():
+            loader_calls.append(name)
+            return datasets[name]
+        return load_dataset
+
+    class FakeClassifyEnv(LegacySeedEnv):
+        def __init__(self, train_set, target):
+            super().__init__()
+            self.dataset = (train_set, target)
+
+    monkeypatch.setitem(
+        sys.modules,
+        "domain.classify_gym",
+        module(
+            ClassifyEnv=FakeClassifyEnv,
+            digit_raw=loader("digit_raw"),
+            mnist_256=loader("mnist_256"),
+            mnist_784=loader("mnist_784"),
+        ),
+    )
+
+    env = make_env_module.make_env(env_name)
+
+    assert loader_calls == [loader_name]
+    assert env.dataset == datasets[loader_name]
+
+
+def test_unknown_classification_environment_raises_descriptive_error(
+        monkeypatch, make_env_module):
+    monkeypatch.setitem(
+        sys.modules, "domain.classify_gym", module(ClassifyEnv=LegacySeedEnv)
+    )
+
+    with pytest.raises(
+            ValueError,
+            match="Unknown classification environment: 'Classify_unknown'",
+    ):
+        make_env_module.make_env("Classify_unknown")
+
+
 @pytest.mark.parametrize("env_name", ["Acrobot-v1", "FakeBulletEnv-v0"])
 def test_gym_environment_categories_use_modern_reset_seeding(monkeypatch,
                                                              make_env_module,
