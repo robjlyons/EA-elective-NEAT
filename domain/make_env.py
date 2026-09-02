@@ -62,7 +62,7 @@ def make_env(env_name, seed=-1, render_mode=False):
         env_name = env_name.split(':')[1]
         random_seed = seed if seed >= 0 else 0
         env = MinatarWrapper(env_name, sticky_action_prob=.0,
-                             random_seed=random_seed)
+                             seed=0)
         seeded_on_creation = seed >= 0
     # =================================================================================================================+
 
